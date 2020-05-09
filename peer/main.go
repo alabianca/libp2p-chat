@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	//relay "github.com/libp2p/go-libp2p-circuit"
+	//"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
 	"time"
 
@@ -30,7 +32,6 @@ import (
 )
 
 type NullValidator struct {
-
 }
 
 func (v *NullValidator) Validate(key string, value []byte) error {
@@ -49,10 +50,8 @@ func main() {
 	bootstrap := flag.String("bootstrap", "/ip4/134.209.171.195/tcp/5000/p2p/QmWpBxWhq8G9G9m2yxc314Hfmd39PiHuWC5EJv3xZz9KxZ", "the relay")
 	flag.Parse()
 
-
 	ctx := context.Background()
 	//defer cancel()
-
 
 	if *joinRoom == "" && *room == "" {
 		panic("At least one flag must be provided")
@@ -69,11 +68,15 @@ func main() {
 	})
 
 	listenAddress := libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
+	//myAddr, err := circuitRelay(*bootstrap, "/ip4/0.0.0.0/tcp/0")
+	//if err != nil {
+	//	panic(err)
+	//}
+	//listenAddress := libp2p.ListenAddrs(myAddr)
 
 	enableRelay := libp2p.EnableRelay()
 
 	security := libp2p.Security(secio.ID, secio.New)
-
 
 	host, err := libp2p.New(ctx, listenAddress, security, routing, enableRelay)
 	if err != nil {
@@ -92,6 +95,7 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
 	peerInfo, err := peer.AddrInfoFromP2pAddr(ma)
 	if err != nil {
 		panic(err)
@@ -101,8 +105,6 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("we are connected to the bootstrap peer")
-
-
 
 	time.Sleep(time.Second * 5)
 
@@ -122,13 +124,12 @@ func main() {
 
 	if *joinRoom != "" {
 		fmt.Printf("Joining room %s\n", protocolKey(*joinRoom))
-		pctx, _ := context.WithTimeout(ctx, time.Second * 10)
+		pctx, _ := context.WithTimeout(ctx, time.Second*10)
 		peers, err := discovery.FindPeers(pctx, routingDiscovery, string(protocolKey(*joinRoom)))
 		//peerChan, err := routingDiscovery.FindPeers(pctx, protocolKey(*joinRoom))
 		if err != nil {
 			panic(err)
 		}
-
 
 		if len(peers) == 0 {
 			fmt.Println("No Peers Found")
@@ -138,19 +139,39 @@ func main() {
 		fmt.Printf("Found %d peers\n", len(peers))
 
 		for _, p := range peers {
-			fmt.Println("Trying peer %s\n", p.ID.Pretty())
-			stream, err := host.NewStream(ctx, p.ID, protocolKey(*joinRoom))
-			if err != nil {
-				fmt.Printf("Error dialing %s <%s>\n", p.ID.Pretty(), err)
-				continue
+			fmt.Printf("Trying peer %s\n", p.ID.Pretty())
+			fmt.Println("Addresses")
+			for _, addr := range p.Addrs {
+				ma, err := circuitRelay(addr.String(), p.ID.String())
+				if err != nil {
+					fmt.Printf("Error circuit Relay address %s\n", err)
+					continue
+				}
+				info, err := peer.AddrInfoFromP2pAddr(ma)
+				if err != nil {
+					fmt.Printf("Error converting to addr info %s\n", err)
+					continue
+				}
+
+				//fmt.Printf("Adding  the info to the peerstore")
+				//host.Peerstore().AddAddrs(p.ID, p.Addrs, peerstore.TempAddrTTL)
+
+				fmt.Printf("Going to try and connect via relay (%s)\n", ma)
+				if err := host.Connect(ctx, *info); err == nil {
+					fmt.Printf("We Have a connection try to create a stream now\n")
+					stream, err := host.NewStream(ctx, p.ID, protocolKey(*joinRoom))
+					if err != nil {
+						fmt.Printf("Error dialing %s <%s>\n", p.ID.Pretty(), err)
+					} else {
+						go handleStream(stream)
+						break
+					}
+
+				}
+
 			}
 
-			go handleStream(stream)
-
 		}
-
-		// just grab the first one for brevity
-
 
 		select {}
 	}
@@ -164,4 +185,8 @@ func protocolKey(key string) protocol.ID {
 func handleStream(stream network.Stream) {
 	fmt.Println("Handling Stream")
 	defer stream.Close()
+}
+
+func circuitRelay(target string, id string) (multiaddr.Multiaddr, error) {
+	return multiaddr.NewMultiaddr("/p2p-circuit" + target + "/p2p/" + id)
 }
