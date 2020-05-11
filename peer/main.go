@@ -106,6 +106,12 @@ func main() {
 	}
 	fmt.Println("we are connected to the bootstrap peer")
 
+	if err := ddht.Bootstrap(ctx); err != nil {
+		panic(err)
+	}
+
+	fmt.Println("DHT in a bootstrapped state")
+
 	time.Sleep(time.Second * 5)
 
 	// now do chat specific stuff
