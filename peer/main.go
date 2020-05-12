@@ -130,13 +130,13 @@ func main() {
 	ddht.WAN.RoutingTable().Print()
 
 	fmt.Println("Advertising")
-	//var ad string
-	//if *room != "" {
-	//	ad = *room
-	//} else {
-	//	ad = *joinRoom
-	//}
-	//discovery.Advertise(ctx, routingDiscovery, string(protocolKey(ad)))
+	var ad string
+	if *room != "" {
+		ad = *room
+	} else {
+		ad = *joinRoom
+	}
+	discovery.Advertise(ctx, routingDiscovery, string(protocolKey(ad)))
 
 	time.Sleep(time.Second * 2)
 
