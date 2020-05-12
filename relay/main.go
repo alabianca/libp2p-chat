@@ -66,10 +66,9 @@ func main() {
 		panic(err)
 	}
 
-
-	fmt.Printf("This Node is a relay. %s/p2p/%s\n", *listen, host.ID().Pretty())
-
-	select {
-
+	for _, addr := range host.Addrs() {
+		fmt.Printf("Addr: %s/p2p/%s\n", addr, host.ID().Pretty())
 	}
+
+	select {}
 }
