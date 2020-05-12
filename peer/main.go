@@ -98,11 +98,6 @@ func main() {
 		panic(err)
 	}
 
-
-	if err := ddht.Bootstrap(ctx); err != nil {
-		panic(err)
-	}
-
 	//var wg sync.WaitGroup
 	//for _, peerAddr := range dht.DefaultBootstrapPeers {
 	//	peerinfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
@@ -122,6 +117,10 @@ func main() {
 		panic(err)
 	}
 	fmt.Println("we are connected to the bootstrap peers")
+
+	if err := ddht.Bootstrap(ctx); err != nil {
+		panic(err)
+	}
 
 	fmt.Println("DHT in a bootstrapped state")
 
