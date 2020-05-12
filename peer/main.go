@@ -4,8 +4,6 @@ import (
 	"context"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/routing"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
-
 	//relay "github.com/libp2p/go-libp2p-circuit"
 	//"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -17,6 +15,9 @@ import (
 	"github.com/libp2p/go-libp2p"
 
 	//dht "github.com/libp2p/go-libp2p-kad-dht"
+
+	//dht "github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/libp2p/go-libp2p-kad-dht/dual"
 
 	//"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/network"
@@ -52,11 +53,11 @@ func main() {
 	//	panic("At least one flag must be provided")
 	//}
 
-	var ddht *dht.IpfsDHT
+	var ddht *dual.DHT
 	//var routingDiscovery *discovery.RoutingDiscovery
 	routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
 		var err error
-		ddht, err = dht.New(ctx, host)
+		ddht, err = dual.New(ctx, host)
 		//routingDiscovery = discovery.NewRoutingDiscovery(ddht)
 
 		return ddht, err
@@ -70,7 +71,7 @@ func main() {
 
 	//security := libp2p.Security(secio.ID, secio.New)
 
-	host, err := libp2p.New(ctx, listenAddress, routing)
+	host, err := libp2p.New(ctx, listenAddress, routing, libp2p.NATPortMap(), libp2p.EnableAutoRelay())
 	if err != nil {
 		panic(err)
 	}
@@ -120,10 +121,10 @@ func main() {
 
 	time.Sleep(time.Second * 5)
 
-	ddht.RoutingTable().Print()
-	//ddht.LAN.RoutingTable().Print()
-	//ddht.WAN.RoutingTable().Print()
+	ddht.LAN.RoutingTable().Print()
+	ddht.WAN.RoutingTable().Print()
 
+	fmt.Println("Advertising")
 	//var ad string
 	//if *target != "" {
 	//	ad = *target

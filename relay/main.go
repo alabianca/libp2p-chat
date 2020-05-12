@@ -1,12 +1,14 @@
 package main
 
 import (
-	dht "github.com/libp2p/go-libp2p-kad-dht"
+	secio "github.com/libp2p/go-libp2p-secio"
+	libp2ptls "github.com/libp2p/go-libp2p-tls"
 	//dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/multiformats/go-multiaddr"
 
 	//context2 "context"
 	//"crypto/rand"
+	autonat "github.com/libp2p/go-libp2p-autonat-svc"
 	mrand "math/rand"
 	//"flag"
 	"fmt"
@@ -16,7 +18,7 @@ import (
 	//"github.com/libp2p/go-libp2p-core/host"
 	//"github.com/libp2p/go-libp2p-core/routing"
 	//dht "github.com/libp2p/go-libp2p-kad-dht"
-	//"github.com/libp2p/go-libp2p-kad-dht/dual"
+	"github.com/libp2p/go-libp2p-kad-dht/dual"
 	"golang.org/x/net/context"
 
 	//secio "github.com/libp2p/go-libp2p-secio"
@@ -54,6 +56,7 @@ func main() {
 		ctx,
 		libp2p.ListenAddrs(sourceMultiAddr),
 		libp2p.Identity(prvKey),
+		libp2p.EnableNATService(),
 	)
 	if err != nil {
 		panic(err)
@@ -61,7 +64,7 @@ func main() {
 
 	fmt.Println("This node: ", host.ID().Pretty(), " ", host.Addrs())
 
-	_, err = dht.New(ctx, host)
+	_, err = dual.New(ctx, host)
 	if err != nil {
 		panic(err)
 	}
