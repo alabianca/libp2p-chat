@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
-
 	//relay "github.com/libp2p/go-libp2p-circuit"
 	//"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -63,24 +61,21 @@ func main() {
 	var routingDiscovery *discovery.RoutingDiscovery
 	routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
 		var err error
-		ddht, err = dual.New(ctx, host, dht.Mode(dht.ModeServer))
+		ddht, err = dual.New(ctx, host)
 		routingDiscovery = discovery.NewRoutingDiscovery(ddht)
 
 		return ddht, err
 	})
 
-	listenAddress := libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
-	//myAddr, err := circuitRelay(*bootstrap, "/ip4/0.0.0.0/tcp/0")
-	//if err != nil {
-	//	panic(err)
-	//}
-	//listenAddress := libp2p.ListenAddrs(myAddr)
 
-	enableRelay := libp2p.EnableRelay()
+
+	listenAddress := libp2p.ListenAddrStrings("/ip4/0.0.0.0/tcp/0")
+
+	//enableRelay := libp2p.EnableRelay()
 
 	security := libp2p.Security(secio.ID, secio.New)
 
-	host, err := libp2p.New(ctx, listenAddress, security, routing, enableRelay, libp2p.NATPortMap())
+	host, err := libp2p.New(ctx, listenAddress, security, routing, libp2p.NATPortMap())
 	if err != nil {
 		panic(err)
 	}
@@ -103,18 +98,21 @@ func main() {
 		panic(err)
 	}
 
+	if err := ddht.Bootstrap(ctx); err != nil {
+		panic(err)
+	}
+
 	if err := host.Connect(ctx, *peerInfo); err != nil {
 		panic(err)
 	}
 	fmt.Println("we are connected to the bootstrap peer")
 
-	if err := ddht.Bootstrap(ctx); err != nil {
-		panic(err)
-	}
-
 	fmt.Println("DHT in a bootstrapped state")
 
 	time.Sleep(time.Second * 5)
+
+	ddht.LAN.RoutingTable().Print()
+	ddht.WAN.RoutingTable().Print()
 
 	// now do chat specific stuff
 	if *room != "" {
