@@ -1,18 +1,24 @@
 package main
 
 import (
-	context2 "context"
-	"crypto/rand"
-	"flag"
+	//dht "github.com/libp2p/go-libp2p-kad-dht"
+	"github.com/multiformats/go-multiaddr"
+
+	//context2 "context"
+	//"crypto/rand"
+	mrand "math/rand"
+	//"flag"
 	"fmt"
 	"github.com/libp2p/go-libp2p"
-	relay "github.com/libp2p/go-libp2p-circuit"
+	//relay "github.com/libp2p/go-libp2p-circuit"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/routing"
+	//"github.com/libp2p/go-libp2p-core/host"
+	//"github.com/libp2p/go-libp2p-core/routing"
+	//dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/libp2p/go-libp2p-kad-dht/dual"
+	"golang.org/x/net/context"
 
-	secio "github.com/libp2p/go-libp2p-secio"
+	//secio "github.com/libp2p/go-libp2p-secio"
 )
 
 type NullValidator struct {
@@ -30,52 +36,79 @@ func (v *NullValidator) Select(key string, values [][]byte) (int, error) {
 //const Protocol = "kadbox"
 
 func main() {
-	listen := flag.String("listen", "/ip4/0.0.0.0/tcp/5000", "The listen address")
-	flag.Parse()
+	//listen := flag.String("listen", "/ip4/0.0.0.0/tcp/5000", "The listen address")
 
-	ctx, cancel := context2.WithCancel(context2.Background())
-	defer cancel()
+	ctx := context.Background()
 
-	var ddht *dual.DHT
-	routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
-		var err error
-		ddht, err = dual.New(ctx, host)
-		return ddht,err
-	})
+	// libp2p.New constructs a new libp2p Host.
+	// Other options can be added here.
+	sourceMultiAddr, _ := multiaddr.NewMultiaddr("/ip4/0.0.0.0/tcp/5000")
 
-	listenAddress := libp2p.ListenAddrStrings(*listen)
-
-	enableRelay := libp2p.EnableRelay(relay.OptActive, relay.OptHop)
-
-	priv, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
+	r := mrand.New(mrand.NewSource(int64(10)))
+	prvKey, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, r)
 	if err != nil {
 		panic(err)
 	}
-
-	identity := libp2p.Identity(priv)
-
-	security := libp2p.Security(secio.ID, secio.New)
-
 	host, err := libp2p.New(
 		ctx,
-		routing,
-		listenAddress,
-		enableRelay,
-		identity,
-		security,
+		libp2p.ListenAddrs(sourceMultiAddr),
+		libp2p.Identity(prvKey),
 	)
-
 	if err != nil {
 		panic(err)
 	}
 
-	for _, addr := range host.Addrs() {
-		fmt.Printf("Addr: %s/p2p/%s\n", addr, host.ID().Pretty())
-	}
+	fmt.Println("This node: ", host.ID().Pretty(), " ", host.Addrs())
 
-	if err := ddht.Bootstrap(ctx); err != nil {
+	_, err = dual.New(ctx, host)
+	if err != nil {
 		panic(err)
 	}
+	//flag.Parse()
+	//
+	//ctx, cancel := context2.WithCancel(context2.Background())
+	//defer cancel()
+	//
+	//var ddht *dual.DHT
+	//routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
+	//	var err error
+	//	ddht, err = dual.New(ctx, host)
+	//	return ddht,err
+	//})
+	//
+	//listenAddress := libp2p.ListenAddrStrings(*listen)
+	//
+	//enableRelay := libp2p.EnableRelay(relay.OptActive, relay.OptHop)
+	//
+	//priv, _, err := crypto.GenerateKeyPairWithReader(crypto.RSA, 2048, rand.Reader)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//identity := libp2p.Identity(priv)
+	//
+	//security := libp2p.Security(secio.ID, secio.New)
+	//
+	//host, err := libp2p.New(
+	//	ctx,
+	//	routing,
+	//	listenAddress,
+	//	enableRelay,
+	//	identity,
+	//	security,
+	//)
+	//
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//for _, addr := range host.Addrs() {
+	//	fmt.Printf("Addr: %s/p2p/%s\n", addr, host.ID().Pretty())
+	//}
+	//
+	//if err := ddht.Bootstrap(ctx); err != nil {
+	//	panic(err)
+	//}
 
 	select {}
 }

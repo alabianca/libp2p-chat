@@ -10,4 +10,5 @@ require (
 	github.com/libp2p/go-libp2p-kad-dht v0.7.10
 	github.com/libp2p/go-libp2p-secio v0.2.2
 	github.com/multiformats/go-multiaddr v0.2.1
+	golang.org/x/net v0.0.0-20190923162816-aa69164e4478
 )
