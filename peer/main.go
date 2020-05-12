@@ -4,9 +4,6 @@ import (
 	"context"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/routing"
-	dht "github.com/libp2p/go-libp2p-kad-dht"
-	"sync"
-
 	//relay "github.com/libp2p/go-libp2p-circuit"
 	//"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -50,7 +47,7 @@ func (v *NullValidator) Select(key string, values [][]byte) (int, error) {
 func main() {
 	room := flag.String("room", "", "the room you want to create")
 	joinRoom := flag.String("join", "", "the room you want to join")
-	//bootstrap := flag.String("bootstrap", "/ip4/134.209.171.195/tcp/5000/p2p/QmWpBxWhq8G9G9m2yxc314Hfmd39PiHuWC5EJv3xZz9KxZ", "the relay")
+	bootstrap := flag.String("bootstrap", "/ip4/134.209.171.195/tcp/5000/p2p/QmWpBxWhq8G9G9m2yxc314Hfmd39PiHuWC5EJv3xZz9KxZ", "the relay")
 	flag.Parse()
 
 	ctx := context.Background()
@@ -91,39 +88,39 @@ func main() {
 	fmt.Printf("My ID %s\n", host.ID().Pretty())
 
 	// connect to the bootstrap peers
-	//ma, err := multiaddr.NewMultiaddr(*bootstrap)
-	//if err != nil {
-	//	panic(err)
-	//}
-	//
-	//peerInfo, err := peer.AddrInfoFromP2pAddr(ma)
-	//if err != nil {
-	//	panic(err)
-	//}
+	ma, err := multiaddr.NewMultiaddr(*bootstrap)
+	if err != nil {
+		panic(err)
+	}
+
+	peerInfo, err := peer.AddrInfoFromP2pAddr(ma)
+	if err != nil {
+		panic(err)
+	}
 
 
 	if err := ddht.Bootstrap(ctx); err != nil {
 		panic(err)
 	}
 
-	var wg sync.WaitGroup
-	for _, peerAddr := range dht.DefaultBootstrapPeers {
-		peerinfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			if err := host.Connect(ctx, *peerinfo); err != nil {
-				fmt.Println("Could Not Connect to bootstrap peer")
-			} else {
-				fmt.Println("Connection established with bootstrap node:", *peerinfo)
-			}
-		}()
-	}
-	wg.Wait()
-
-	//if err := host.Connect(ctx, *peerInfo); err != nil {
-	//	panic(err)
+	//var wg sync.WaitGroup
+	//for _, peerAddr := range dht.DefaultBootstrapPeers {
+	//	peerinfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
+	//	wg.Add(1)
+	//	go func() {
+	//		defer wg.Done()
+	//		if err := host.Connect(ctx, *peerinfo); err != nil {
+	//			fmt.Println("Could Not Connect to bootstrap peer")
+	//		} else {
+	//			fmt.Println("Connection established with bootstrap node:", *peerinfo)
+	//		}
+	//	}()
 	//}
+	//wg.Wait()
+
+	if err := host.Connect(ctx, *peerInfo); err != nil {
+		panic(err)
+	}
 	fmt.Println("we are connected to the bootstrap peers")
 
 	fmt.Println("DHT in a bootstrapped state")
@@ -134,25 +131,26 @@ func main() {
 	ddht.WAN.RoutingTable().Print()
 
 	fmt.Println("Advertising")
-	var ad string
-	if *room != "" {
-		ad = *room
-	} else {
-		ad = *joinRoom
-	}
-	discovery.Advertise(ctx, routingDiscovery, string(protocolKey(ad)))
+	//var ad string
+	//if *room != "" {
+	//	ad = *room
+	//} else {
+	//	ad = *joinRoom
+	//}
+	//discovery.Advertise(ctx, routingDiscovery, string(protocolKey(ad)))
 
 	time.Sleep(time.Second * 2)
 
 	// now do chat specific stuff
 	if *room != "" {
 		host.SetStreamHandler(protocolKey(*room), handleStream)
+		fmt.Println("Waiting for connections")
 		// create a room and wait for connections in it
-		fmt.Printf("Advertising %s\n", protocolKey(*room))
-
-
-
-		fmt.Printf("Successfully advertised room: %s\n", *room)
+		//fmt.Printf("Advertising %s\n", protocolKey(*room))
+		//
+		//
+		//
+		//fmt.Printf("Successfully advertised room: %s\n", *room)
 
 		// wait forever
 		select {}
@@ -160,9 +158,9 @@ func main() {
 
 	if *joinRoom != "" {
 		fmt.Printf("Joining room %s\n", protocolKey(*joinRoom))
-		pctx, _ := context.WithTimeout(ctx, time.Second*10)
+		//pctx, _ := context.WithTimeout(ctx, time.Second*10)
 		//peers, err := discovery.FindPeers(pctx, routingDiscovery, string(protocolKey(*joinRoom)))
-		peerChan, err := routingDiscovery.FindPeers(pctx, string(protocolKey(*joinRoom)))
+		peerChan, err := routingDiscovery.FindPeers(ctx, string(protocolKey(*joinRoom)))
 		if err != nil {
 			panic(err)
 		}
