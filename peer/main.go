@@ -2,6 +2,8 @@ package main
 
 import (
 	"context"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
+
 	//relay "github.com/libp2p/go-libp2p-circuit"
 	//"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -61,7 +63,7 @@ func main() {
 	var routingDiscovery *discovery.RoutingDiscovery
 	routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
 		var err error
-		ddht, err = dual.New(ctx, host)
+		ddht, err = dual.New(ctx, host, dht.Mode(dht.ModeServer))
 		routingDiscovery = discovery.NewRoutingDiscovery(ddht)
 
 		return ddht, err
