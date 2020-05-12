@@ -1,6 +1,7 @@
 package main
 
 import (
+	dht "github.com/libp2p/go-libp2p-kad-dht"
 	//dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/multiformats/go-multiaddr"
 
@@ -15,7 +16,7 @@ import (
 	//"github.com/libp2p/go-libp2p-core/host"
 	//"github.com/libp2p/go-libp2p-core/routing"
 	//dht "github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/libp2p/go-libp2p-kad-dht/dual"
+	//"github.com/libp2p/go-libp2p-kad-dht/dual"
 	"golang.org/x/net/context"
 
 	//secio "github.com/libp2p/go-libp2p-secio"
@@ -60,7 +61,7 @@ func main() {
 
 	fmt.Println("This node: ", host.ID().Pretty(), " ", host.Addrs())
 
-	_, err = dual.New(ctx, host)
+	_, err = dht.New(ctx, host)
 	if err != nil {
 		panic(err)
 	}
