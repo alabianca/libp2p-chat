@@ -50,7 +50,7 @@ func (v *NullValidator) Select(key string, values [][]byte) (int, error) {
 func main() {
 	room := flag.String("room", "", "the room you want to create")
 	joinRoom := flag.String("join", "", "the room you want to join")
-	bootstrap := flag.String("bootstrap", "/ip4/134.209.171.195/tcp/5000/p2p/QmWpBxWhq8G9G9m2yxc314Hfmd39PiHuWC5EJv3xZz9KxZ", "the relay")
+	//bootstrap := flag.String("bootstrap", "/ip4/134.209.171.195/tcp/5000/p2p/QmWpBxWhq8G9G9m2yxc314Hfmd39PiHuWC5EJv3xZz9KxZ", "the relay")
 	flag.Parse()
 
 	ctx := context.Background()
