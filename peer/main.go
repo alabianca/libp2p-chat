@@ -122,11 +122,7 @@ func main() {
 		// create a room and wait for connections in it
 		fmt.Printf("Advertising %s\n", protocolKey(*room))
 
-		if err := ddht.PutValue(ctx, "/chat/alex", []byte("alexander")); err != nil {
-			panic(err)
-		}
-
-		//discovery.Advertise(ctx, routingDiscovery, string(protocolKey(*room)))
+		discovery.Advertise(ctx, routingDiscovery, string(protocolKey(*room)))
 
 		fmt.Printf("Successfully advertised room: %s\n", *room)
 
@@ -136,58 +132,54 @@ func main() {
 
 	if *joinRoom != "" {
 		fmt.Printf("Joining room %s\n", protocolKey(*joinRoom))
-		//pctx, _ := context.WithTimeout(ctx, time.Second*10)
-
-		val, err := ddht.GetValue(ctx, "/chat/alex")
-		//peers, err := discovery.FindPeers(pctx, routingDiscovery, string(protocolKey(*joinRoom)))
+		pctx, _ := context.WithTimeout(ctx, time.Second*10)
+		peers, err := discovery.FindPeers(pctx, routingDiscovery, string(protocolKey(*joinRoom)))
 		//peerChan, err := routingDiscovery.FindPeers(pctx, protocolKey(*joinRoom))
 		if err != nil {
 			panic(err)
 		}
 
-		fmt.Println("Found: ", string(val))
+		if len(peers) == 0 {
+			fmt.Println("No Peers Found")
+			return
+		}
 
-		//if len(peers) == 0 {
-		//	fmt.Println("No Peers Found")
-		//	return
-		//}
-		//
-		//fmt.Printf("Found %d peers\n", len(peers))
-		//
-		//for _, p := range peers {
-		//	fmt.Printf("Trying peer %s\n", p.ID.Pretty())
-		//	fmt.Println("Addresses")
-		//	for _, addr := range p.Addrs {
-		//		ma, err := circuitRelay(addr.String(), p.ID.String())
-		//		if err != nil {
-		//			fmt.Printf("Error circuit Relay address %s\n", err)
-		//			continue
-		//		}
-		//		info, err := peer.AddrInfoFromP2pAddr(ma)
-		//		if err != nil {
-		//			fmt.Printf("Error converting to addr info %s\n", err)
-		//			continue
-		//		}
-		//
-		//		//fmt.Printf("Adding  the info to the peerstore")
-		//		//host.Peerstore().AddAddrs(p.ID, p.Addrs, peerstore.TempAddrTTL)
-		//
-		//		fmt.Printf("Going to try and connect via relay (%s)\n", ma)
-		//		if err := host.Connect(ctx, *info); err == nil {
-		//			fmt.Printf("We Have a connection try to create a stream now\n")
-		//			stream, err := host.NewStream(ctx, p.ID, protocolKey(*joinRoom))
-		//			if err != nil {
-		//				fmt.Printf("Error dialing %s <%s>\n", p.ID.Pretty(), err)
-		//			} else {
-		//				go handleStream(stream)
-		//				break
-		//			}
-		//
-		//		}
-		//
-		//	}
-		//
-		//}
+		fmt.Printf("Found %d peers\n", len(peers))
+
+		for _, p := range peers {
+			fmt.Printf("Trying peer %s\n", p.ID.Pretty())
+			fmt.Println("Addresses")
+			for _, addr := range p.Addrs {
+				ma, err := circuitRelay(addr.String(), p.ID.String())
+				if err != nil {
+					fmt.Printf("Error circuit Relay address %s\n", err)
+					continue
+				}
+				info, err := peer.AddrInfoFromP2pAddr(ma)
+				if err != nil {
+					fmt.Printf("Error converting to addr info %s\n", err)
+					continue
+				}
+
+				//fmt.Printf("Adding  the info to the peerstore")
+				//host.Peerstore().AddAddrs(p.ID, p.Addrs, peerstore.TempAddrTTL)
+
+				fmt.Printf("Going to try and connect via relay (%s)\n", ma)
+				if err := host.Connect(ctx, *info); err == nil {
+					fmt.Printf("We Have a connection try to create a stream now\n")
+					stream, err := host.NewStream(ctx, p.ID, protocolKey(*joinRoom))
+					if err != nil {
+						fmt.Printf("Error dialing %s <%s>\n", p.ID.Pretty(), err)
+					} else {
+						go handleStream(stream)
+						break
+					}
+
+				}
+
+			}
+
+		}
 
 		select {}
 	}
