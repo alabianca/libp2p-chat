@@ -80,7 +80,7 @@ func main() {
 
 	security := libp2p.Security(secio.ID, secio.New)
 
-	host, err := libp2p.New(ctx, listenAddress, security, routing, enableRelay)
+	host, err := libp2p.New(ctx, listenAddress, security, routing, enableRelay, libp2p.NATPortMap())
 	if err != nil {
 		panic(err)
 	}
