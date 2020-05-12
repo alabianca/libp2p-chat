@@ -11,9 +11,7 @@ import (
 	"flag"
 	"fmt"
 	"github.com/libp2p/go-libp2p"
-	//"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/routing"
+
 	//dht "github.com/libp2p/go-libp2p-kad-dht"
 
 	//dht "github.com/libp2p/go-libp2p-kad-dht"
@@ -57,15 +55,15 @@ func main() {
 		panic("At least one flag must be provided")
 	}
 
-	var ddht *dual.DHT
-	var routingDiscovery *discovery.RoutingDiscovery
-	routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
-		var err error
-		ddht, err = dual.New(ctx, host)
-		routingDiscovery = discovery.NewRoutingDiscovery(ddht)
-
-		return ddht, err
-	})
+	//var ddht *dual.DHT
+	//var routingDiscovery *discovery.RoutingDiscovery
+	//routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
+	//	var err error
+	//	ddht, err = dual.New(ctx, host)
+	//	routingDiscovery = discovery.NewRoutingDiscovery(ddht)
+	//
+	//	return ddht, err
+	//})
 
 
 
@@ -75,7 +73,7 @@ func main() {
 
 	security := libp2p.Security(secio.ID, secio.New)
 
-	host, err := libp2p.New(ctx, listenAddress, security, routing, libp2p.EnableAutoRelay(), libp2p.EnableNATService())
+	host, err := libp2p.New(ctx, listenAddress, security, libp2p.EnableAutoRelay(), libp2p.EnableNATService())
 	if err != nil {
 		panic(err)
 	}
@@ -97,6 +95,12 @@ func main() {
 	if err != nil {
 		panic(err)
 	}
+
+	ddht, err := dual.New(ctx, host)
+	if err != nil {
+		panic(err)
+	}
+	routingDiscovery := discovery.NewRoutingDiscovery(ddht)
 
 	if err := ddht.Bootstrap(ctx); err != nil {
 		panic(err)

@@ -8,10 +8,7 @@ import (
 	"github.com/libp2p/go-libp2p"
 	relay "github.com/libp2p/go-libp2p-circuit"
 	"github.com/libp2p/go-libp2p-core/crypto"
-	"github.com/libp2p/go-libp2p-core/host"
-	"github.com/libp2p/go-libp2p-core/routing"
-	//dht "github.com/libp2p/go-libp2p-kad-dht"
-	"github.com/libp2p/go-libp2p-kad-dht/dual"
+
 	secio "github.com/libp2p/go-libp2p-secio"
 )
 
@@ -36,9 +33,9 @@ func main() {
 	ctx, cancel := context2.WithCancel(context2.Background())
 	defer cancel()
 
-	routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
-		return dual.New(ctx, host)
-	})
+	//routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
+	//	return dual.New(ctx, host)
+	//})
 
 	listenAddress := libp2p.ListenAddrStrings(*listen)
 
@@ -55,7 +52,7 @@ func main() {
 
 	host, err := libp2p.New(
 		ctx,
-		routing,
+		//routing,
 		listenAddress,
 		enableRelay,
 		identity,
