@@ -2,6 +2,11 @@ package main
 
 import (
 	"context"
+	"github.com/libp2p/go-libp2p-core/host"
+	"github.com/libp2p/go-libp2p-core/routing"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
+	"sync"
+
 	//relay "github.com/libp2p/go-libp2p-circuit"
 	//"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -55,15 +60,15 @@ func main() {
 		panic("At least one flag must be provided")
 	}
 
-	//var ddht *dual.DHT
-	//var routingDiscovery *discovery.RoutingDiscovery
-	//routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
-	//	var err error
-	//	ddht, err = dual.New(ctx, host)
-	//	routingDiscovery = discovery.NewRoutingDiscovery(ddht)
-	//
-	//	return ddht, err
-	//})
+	var ddht *dual.DHT
+	var routingDiscovery *discovery.RoutingDiscovery
+	routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
+		var err error
+		ddht, err = dual.New(ctx, host)
+		routingDiscovery = discovery.NewRoutingDiscovery(ddht)
+
+		return ddht, err
+	})
 
 
 
@@ -73,7 +78,7 @@ func main() {
 
 	security := libp2p.Security(secio.ID, secio.New)
 
-	host, err := libp2p.New(ctx, listenAddress, security)
+	host, err := libp2p.New(ctx, listenAddress, routing, security)
 	if err != nil {
 		panic(err)
 	}
@@ -86,30 +91,40 @@ func main() {
 	fmt.Printf("My ID %s\n", host.ID().Pretty())
 
 	// connect to the bootstrap peers
-	ma, err := multiaddr.NewMultiaddr(*bootstrap)
-	if err != nil {
-		panic(err)
-	}
+	//ma, err := multiaddr.NewMultiaddr(*bootstrap)
+	//if err != nil {
+	//	panic(err)
+	//}
+	//
+	//peerInfo, err := peer.AddrInfoFromP2pAddr(ma)
+	//if err != nil {
+	//	panic(err)
+	//}
 
-	peerInfo, err := peer.AddrInfoFromP2pAddr(ma)
-	if err != nil {
-		panic(err)
-	}
-
-	ddht, err := dual.New(ctx, host)
-	if err != nil {
-		panic(err)
-	}
-	routingDiscovery := discovery.NewRoutingDiscovery(ddht)
 
 	if err := ddht.Bootstrap(ctx); err != nil {
 		panic(err)
 	}
 
-	if err := host.Connect(ctx, *peerInfo); err != nil {
-		panic(err)
+	var wg sync.WaitGroup
+	for _, peerAddr := range dht.DefaultBootstrapPeers {
+		peerinfo, _ := peer.AddrInfoFromP2pAddr(peerAddr)
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			if err := host.Connect(ctx, *peerinfo); err != nil {
+				fmt.Println("Could Not Connect to bootstrap peer")
+			} else {
+				fmt.Println("Connection established with bootstrap node:", *peerinfo)
+			}
+		}()
 	}
-	fmt.Println("we are connected to the bootstrap peer")
+	wg.Wait()
+
+	//if err := host.Connect(ctx, *peerInfo); err != nil {
+	//	panic(err)
+	//}
+	fmt.Println("we are connected to the bootstrap peers")
 
 	fmt.Println("DHT in a bootstrapped state")
 
