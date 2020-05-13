@@ -1,14 +1,15 @@
 package main
 
 import (
-	secio "github.com/libp2p/go-libp2p-secio"
-	libp2ptls "github.com/libp2p/go-libp2p-tls"
+	dht "github.com/libp2p/go-libp2p-kad-dht"
+	//secio "github.com/libp2p/go-libp2p-secio"
+	//libp2ptls "github.com/libp2p/go-libp2p-tls"
 	//dht "github.com/libp2p/go-libp2p-kad-dht"
 	"github.com/multiformats/go-multiaddr"
 
 	//context2 "context"
 	//"crypto/rand"
-	autonat "github.com/libp2p/go-libp2p-autonat-svc"
+	//utonat "github.com/libp2p/go-libp2p-autonat-svc"
 	mrand "math/rand"
 	//"flag"
 	"fmt"
@@ -64,7 +65,7 @@ func main() {
 
 	fmt.Println("This node: ", host.ID().Pretty(), " ", host.Addrs())
 
-	_, err = dual.New(ctx, host)
+	_, err = dual.New(ctx, host, dht.Mode(dht.ModeServer))
 	if err != nil {
 		panic(err)
 	}
