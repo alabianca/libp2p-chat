@@ -4,6 +4,8 @@ import (
 	"context"
 	"github.com/libp2p/go-libp2p-core/host"
 	"github.com/libp2p/go-libp2p-core/routing"
+	discovery "github.com/libp2p/go-libp2p-discovery"
+
 	//relay "github.com/libp2p/go-libp2p-circuit"
 	//"github.com/libp2p/go-libp2p-core/peerstore"
 	"github.com/libp2p/go-libp2p-core/protocol"
@@ -40,8 +42,9 @@ func (v *NullValidator) Select(key string, values [][]byte) (int, error) {
 //const Protocol = "kadbox"
 
 func main() {
-	target := flag.String("target", "", "the target you want to create")
-	//joinRoom := flag.String("join", "", "the target you want to join")
+	//target := flag.String("target", "", "the target you want to create")
+	room := flag.String("room", "", "the room you want to create")
+	joinRoom := flag.String("join", "", "the target you want to join")
 	bootstrap := flag.String("bootstrap", "/ip4/134.209.171.195/tcp/5000/p2p/QmWpBxWhq8G9G9m2yxc314Hfmd39PiHuWC5EJv3xZz9KxZ", "the relay")
 
 	flag.Parse()
@@ -49,16 +52,16 @@ func main() {
 	ctx := context.Background()
 	//defer cancel()
 
-	//if *joinRoom == "" && *target == "" {
-	//	panic("At least one flag must be provided")
-	//}
+	if *joinRoom == "" && *room == "" {
+		panic("At least one flag must be provided")
+	}
 
 	var ddht *dual.DHT
-	//var routingDiscovery *discovery.RoutingDiscovery
+	var routingDiscovery *discovery.RoutingDiscovery
 	routing := libp2p.Routing(func(host host.Host) (routing.PeerRouting, error) {
 		var err error
 		ddht, err = dual.New(ctx, host)
-		//routingDiscovery = discovery.NewRoutingDiscovery(ddht)
+		routingDiscovery = discovery.NewRoutingDiscovery(ddht)
 
 		return ddht, err
 	})
@@ -125,81 +128,81 @@ func main() {
 	ddht.WAN.RoutingTable().Print()
 
 	fmt.Println("Advertising")
-	//var ad string
-	//if *target != "" {
-	//	ad = *target
-	//} else {
-	//	ad = *joinRoom
-	//}
-	//discovery.Advertise(ctx, routingDiscovery, string(protocolKey(ad)))
+	var ad string
+	if *room != "" {
+		ad = *room
+	} else {
+		ad = *joinRoom
+	}
+	discovery.Advertise(ctx, routingDiscovery, string(protocolKey(ad)))
 
 	time.Sleep(time.Second * 2)
 
 	// now do chat specific stuff
-	//if *target != "" {
-	//	host.SetStreamHandler(protocolKey(*target), handleStream)
-	//	fmt.Println("Waiting for connections")
-	//	// create a target and wait for connections in it
-	//	//fmt.Printf("Advertising %s\n", protocolKey(*target))
-	//	//
-	//	//
-	//	//
-	//	//fmt.Printf("Successfully advertised target: %s\n", *target)
-	//
-	//	// wait forever
-	//	select {}
-	//}
+	if *room != "" {
+		host.SetStreamHandler(protocolKey(*room), handleStream)
+		fmt.Println("Waiting for connections")
+		// create a target and wait for connections in it
+		//fmt.Printf("Advertising %s\n", protocolKey(*target))
+		//
+		//
+		//
+		//fmt.Printf("Successfully advertised target: %s\n", *target)
 
-	if *target != "" {
-		//fmt.Printf("Joining target %s\n", protocolKey(*joinRoom))
+		// wait forever
+		select {}
+	}
+
+	if *joinRoom != "" {
+		fmt.Printf("Joining target %s\n", protocolKey(*joinRoom))
 		//pctx, _ := context.WithTimeout(ctx, time.Second*10)
 		//peers, err := discovery.FindPeers(pctx, routingDiscovery, string(protocolKey(*joinRoom)))
-		//peerChan, err := routingDiscovery.FindPeers(ctx, string(protocolKey(*joinRoom)))
+		peerChan, err := routingDiscovery.FindPeers(ctx, string(protocolKey(*joinRoom)))
+		if err != nil {
+			panic(err)
+		}
+		//id, err := peer.Decode(*target)
 		//if err != nil {
 		//	panic(err)
 		//}
-		id, err := peer.Decode(*target)
-		if err != nil {
-			panic(err)
-		}
-		info, err := ddht.FindPeer(ctx, id)
-		if err != nil {
-			panic(err)
-		}
-
-		fmt.Println(info)
-		//for p := range peerChan {
-		//	if p.ID == host.ID() {
-		//		continue
-		//	}
-		//	fmt.Println("Trying to connect to peer %s\n", p.ID.Pretty())
-		//	for _, addr := range p.Addrs {
-		//		ma, err := circuitRelay(addr.String(), p.ID.String())
-		//		if err != nil {
-		//			fmt.Printf("Error circuit Relay address %s\n", err)
-		//			continue
-		//		}
-		//		info, err := peer.AddrInfoFromP2pAddr(ma)
-		//		if err != nil {
-		//			fmt.Printf("Error converting to addr info %s\n", err)
-		//			continue
-		//		}
-		//
-		//		fmt.Printf("Going to try and connect via relay (%s)\n", ma)
-		//		if err := host.Connect(ctx, *info); err == nil {
-		//			fmt.Printf("We Have a connection try to create a stream now\n")
-		//			stream, err := host.NewStream(ctx, p.ID, protocolKey(*joinRoom))
-		//			if err != nil {
-		//				fmt.Printf("Error dialing %s <%s>\n", p.ID.Pretty(), err)
-		//			} else {
-		//				go handleStream(stream)
-		//				break
-		//			}
-		//
-		//		}
-		//
-		//	}
+		//info, err := ddht.FindPeer(ctx, id)
+		//if err != nil {
+		//	panic(err)
 		//}
+		//
+		//fmt.Println(info)
+		for p := range peerChan {
+			if p.ID == host.ID() {
+				continue
+			}
+			fmt.Println("Trying to connect to peer %s\n", p.ID.Pretty())
+			for _, addr := range p.Addrs {
+				ma, err := circuitRelay(addr.String(), p.ID.String())
+				if err != nil {
+					fmt.Printf("Error circuit Relay address %s\n", err)
+					continue
+				}
+				info, err := peer.AddrInfoFromP2pAddr(ma)
+				if err != nil {
+					fmt.Printf("Error converting to addr info %s\n", err)
+					continue
+				}
+
+				fmt.Printf("Going to try and connect via relay (%s)\n", ma)
+				if err := host.Connect(ctx, *info); err == nil {
+					fmt.Printf("We Have a connection try to create a stream now\n")
+					stream, err := host.NewStream(ctx, p.ID, protocolKey(*joinRoom))
+					if err != nil {
+						fmt.Printf("Error dialing %s <%s>\n", p.ID.Pretty(), err)
+					} else {
+						go handleStream(stream)
+						break
+					}
+
+				}
+
+			}
+		}
 
 		//if len(peers) == 0 {
 		//	fmt.Println("No Peers Found")
